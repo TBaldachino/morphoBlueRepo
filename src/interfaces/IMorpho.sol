@@ -7,8 +7,14 @@ struct MarketParams {
     address loanToken;
     address collateralToken;
     address oracle;
-    address irm;
+    // address irm;
     uint256 lltv;
+    address lender;
+    address borrower;
+    uint128 irm;
+    uint128 expiryDate;
+    bool isValidatedByLender;
+    bool isValidatedByBorrower;
 }
 
 /// @dev Warning: For `feeRecipient`, `supplyShares` does not contain the accrued shares since the last interest
@@ -64,8 +70,8 @@ interface IMorphoBase {
     /// @dev The recipient receives the fees of a given market through a supply position on that market.
     function feeRecipient() external view returns (address);
 
-    /// @notice Whether the `irm` is enabled.
-    function isIrmEnabled(address irm) external view returns (bool);
+    /*/// @notice Whether the `irm` is enabled.
+    function isIrmEnabled(address irm) external view returns (bool);*/
 
     /// @notice Whether the `lltv` is enabled.
     function isLltvEnabled(uint256 lltv) external view returns (bool);
@@ -84,7 +90,7 @@ interface IMorphoBase {
 
     /// @notice Enables `irm` as a possible IRM for market creation.
     /// @dev Warning: It is not possible to disable an IRM.
-    function enableIrm(address irm) external;
+    // function enableIrm(address irm) external;
 
     /// @notice Enables `lltv` as a possible LLTV for market creation.
     /// @dev Warning: It is not possible to disable a LLTV.
@@ -328,7 +334,18 @@ interface IMorphoStaticTyping is IMorphoBase {
     function idToMarketParams(Id id)
         external
         view
-        returns (address loanToken, address collateralToken, address oracle, address irm, uint256 lltv);
+        returns (
+            address loanToken,
+            address collateralToken,
+            address oracle,
+            uint256 lltv,
+            address lender,
+            address borrower, /*address irm*/
+            uint128 irm,
+            uint128 expiryDate,
+            bool isValidatedByLender,
+            bool isValidatedByBorrower
+        );
 }
 
 /// @title IMorpho

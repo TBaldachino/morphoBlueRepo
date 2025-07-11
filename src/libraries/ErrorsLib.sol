@@ -9,6 +9,12 @@ library ErrorsLib {
     /// @notice Thrown when the caller is not the owner.
     string internal constant NOT_OWNER = "not owner";
 
+    /// @notice Thrown when the caller is not authorized.
+    string internal constant NOT_AUTHORIZED = "not authorized";
+
+    /// @notice Thrown when the market is not validated.
+    string internal constant MARKET_NOT_VALIDATED = "market not validated";
+
     /// @notice Thrown when the LLTV to enable exceeds the maximum LLTV.
     string internal constant MAX_LLTV_EXCEEDED = "max LLTV exceeded";
 
@@ -26,6 +32,9 @@ library ErrorsLib {
 
     /// @notice Thrown when the market is already created.
     string internal constant MARKET_ALREADY_CREATED = "market already created";
+
+    /// @notice Thrown when the market is expired.
+    string internal constant EXPIRED_MARKET = "market expired";
 
     /// @notice Thrown when a token to transfer doesn't have code.
     string internal constant NO_CODE = "no code";

@@ -34,6 +34,11 @@ library EventsLib {
     /// @param marketParams The market that was created.
     event CreateMarket(Id indexed id, MarketParams marketParams);
 
+    /// @notice Emitted when validating a market.
+    /// @param id The market id.
+    /// @param marketParams The market that was validated.
+    event ValidateMarket(Id indexed id, MarketParams marketParams);
+
     /// @notice Emitted on supply of assets.
     /// @dev Warning: `feeRecipient` receives some shares during interest accrual without any supply event emitted.
     /// @param id The market id.
