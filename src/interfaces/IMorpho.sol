@@ -70,11 +70,11 @@ interface IMorphoBase {
     /// @dev The recipient receives the fees of a given market through a supply position on that market.
     function feeRecipient() external view returns (address);
 
-    /*/// @notice Whether the `irm` is enabled.
-    function isIrmEnabled(address irm) external view returns (bool);*/
+    /// @notice Whether the `irm` is enabled.
+    // function isIrmEnabled(address irm) external view returns (bool);
 
     /// @notice Whether the `lltv` is enabled.
-    function isLltvEnabled(uint256 lltv) external view returns (bool);
+    // function isLltvEnabled(uint256 lltv) external view returns (bool);
 
     /// @notice Whether `authorized` is authorized to modify `authorizer`'s position on all markets.
     /// @dev Anyone is authorized to modify their own positions, regardless of this variable.
@@ -94,7 +94,7 @@ interface IMorphoBase {
 
     /// @notice Enables `lltv` as a possible LLTV for market creation.
     /// @dev Warning: It is not possible to disable a LLTV.
-    function enableLltv(uint256 lltv) external;
+    // function enableLltv(uint256 lltv) external;
 
     /// @notice Sets the `newFee` for the given market `marketParams`.
     /// @param newFee The new fee, scaled by WAD.
@@ -340,8 +340,8 @@ interface IMorphoStaticTyping is IMorphoBase {
             address oracle,
             uint256 lltv,
             address lender,
-            address borrower, /*address irm*/
-            uint128 irm,
+            address borrower,
+            uint128 irm, /*address irm*/
             uint128 expiryDate,
             bool isValidatedByLender,
             bool isValidatedByBorrower
