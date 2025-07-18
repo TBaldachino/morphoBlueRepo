@@ -8,13 +8,11 @@ struct MarketParams {
     address collateralToken;
     address oracle;
     // address irm;
-    uint256 lltv;
     address lender;
     address borrower;
-    uint128 irm;
+    uint64 lltv;
+    uint64 irm;
     uint128 expiryDate;
-    bool isValidatedByLender;
-    bool isValidatedByBorrower;
 }
 
 /// @dev Warning: For `feeRecipient`, `supplyShares` does not contain the accrued shares since the last interest
@@ -338,13 +336,11 @@ interface IMorphoStaticTyping is IMorphoBase {
             address loanToken,
             address collateralToken,
             address oracle,
-            uint256 lltv,
             address lender,
             address borrower,
-            uint128 irm, /*address irm*/
-            uint128 expiryDate,
-            bool isValidatedByLender,
-            bool isValidatedByBorrower
+            uint64 lltv,
+            uint64 irm, /*address irm*/
+            uint128 expiryDate
         );
 }
 

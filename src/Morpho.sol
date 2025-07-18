@@ -69,6 +69,8 @@ contract Morpho is IMorphoStaticTyping {
     /// @inheritdoc IMorphoStaticTyping
     mapping(Id => MarketParams) public idToMarketParams;
 
+    mapping(address => mapping(Id => bool)) public isMarketValidated;
+
     /* CONSTRUCTOR */
 
     /// @param newOwner The new owner of the contract.
@@ -90,17 +92,22 @@ contract Morpho is IMorphoStaticTyping {
     }
 
     modifier onlyLender(MarketParams memory marketParams) {
-        require(msg.sender == marketParams.lender, ErrorsLib.NOT_AUTHORIZED);
+        require(msg.sender == marketParams.lender || marketParams.lender == address(0), ErrorsLib.NOT_AUTHORIZED);
         _;
     }
 
     modifier onlyBorrower(MarketParams memory marketParams) {
-        require(msg.sender == marketParams.borrower, ErrorsLib.NOT_AUTHORIZED);
+        require(msg.sender == marketParams.borrower || marketParams.borrower == address(0), ErrorsLib.NOT_AUTHORIZED);
         _;
     }
 
     modifier onlyValidated(MarketParams memory marketParams) {
-        require(marketParams.isValidatedByLender && marketParams.isValidatedByBorrower, ErrorsLib.MARKET_NOT_VALIDATED);
+        Id id = marketParams.id();
+        require(
+            (isMarketValidated[marketParams.lender][id] && isMarketValidated[marketParams.borrower][id])
+                || (marketParams.lender == address(0) && marketParams.borrower == address(0)),
+            ErrorsLib.MARKET_NOT_VALIDATED
+        );
         _;
     }
 
@@ -167,8 +174,8 @@ contract Morpho is IMorphoStaticTyping {
 
         require(msg.sender == marketParams.lender || msg.sender == marketParams.borrower, ErrorsLib.NOT_AUTHORIZED);
 
-        require(marketParams.lender != address(0), ErrorsLib.ZERO_ADDRESS);
-        require(marketParams.borrower != address(0), ErrorsLib.ZERO_ADDRESS);
+        require((marketParams.lender == address(0)) == (marketParams.borrower == address(0)), ErrorsLib.ZERO_ADDRESS);
+
         require(marketParams.expiryDate > block.timestamp, ErrorsLib.EXPIRED_MARKET);
 
         // require(isIrmEnabled[marketParams.irm], ErrorsLib.IRM_NOT_ENABLED);
@@ -179,11 +186,7 @@ contract Morpho is IMorphoStaticTyping {
         market[id].lastUpdate = uint128(block.timestamp);
         idToMarketParams[id] = marketParams;
 
-        if (msg.sender == marketParams.lender) {
-            marketParams.isValidatedByLender = true;
-        } else if (msg.sender == marketParams.borrower) {
-            marketParams.isValidatedByBorrower = true;
-        }
+        isMarketValidated[msg.sender][id] = true;
 
         emit EventsLib.CreateMarket(id, marketParams);
 
@@ -196,11 +199,7 @@ contract Morpho is IMorphoStaticTyping {
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(msg.sender == marketParams.lender || msg.sender == marketParams.borrower, ErrorsLib.NOT_AUTHORIZED);
 
-        if (msg.sender == marketParams.lender && !marketParams.isValidatedByLender) {
-            marketParams.isValidatedByLender = true;
-        } else if (msg.sender == marketParams.borrower && !marketParams.isValidatedByBorrower) {
-            marketParams.isValidatedByBorrower = true;
-        }
+        isMarketValidated[msg.sender][id] = true;
 
         emit EventsLib.ValidateMarket(id, marketParams);
     }
