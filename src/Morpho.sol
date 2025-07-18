@@ -548,20 +548,23 @@ contract Morpho is IMorphoStaticTyping {
 
         if (marketParams.irm != 0) {
             uint256 borrowRate = marketParams.irm;
-            uint256 interest = market[id].totalBorrowAssets.wMulDown(borrowRate.wTaylorCompounded(elapsed));
-            market[id].totalBorrowAssets += interest.toUint128();
-            market[id].totalSupplyAssets += interest.toUint128();
+
+            /// On prend un taux d'intérêt simple annuel plutôt que composé car c'est la norme pour les ope de repo
+            // uint256 interestAPY = market[id].totalBorrowAssets.wMulDown(borrowRate.wTaylorCompounded(elapsed));
+            uint256 interestAPR = market[id].totalBorrowAssets.wMulDown(borrowRate.mulDivDown(elapsed, 31556952));
+            market[id].totalBorrowAssets += interestAPR.toUint128();
+            market[id].totalSupplyAssets += interestAPR.toUint128();
 
             uint256 feeShares;
             if (market[id].fee != 0) {
-                uint256 feeAmount = interest.wMulDown(market[id].fee);
+                uint256 feeAmount = interestAPR.wMulDown(market[id].fee);
                 feeShares =
                     feeAmount.toSharesDown(market[id].totalSupplyAssets - feeAmount, market[id].totalSupplyShares);
                 position[id][feeRecipient].supplyShares += feeShares;
                 market[id].totalSupplyShares += feeShares.toUint128();
             }
 
-            emit EventsLib.AccrueInterest(id, borrowRate, interest, feeShares);
+            emit EventsLib.AccrueInterest(id, borrowRate, interestAPR, feeShares);
         }
 
         // Safe "unchecked" cast.
