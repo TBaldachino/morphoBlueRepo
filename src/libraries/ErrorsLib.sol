@@ -33,6 +33,9 @@ library ErrorsLib {
     /// @notice Thrown when the market is already created.
     string internal constant MARKET_ALREADY_CREATED = "market already created";
 
+    /// @notice Thrown when the market is already validated.
+    string internal constant MARKET_ALREADY_VALIDATED = "market already validated";
+
     /// @notice Thrown when the market is expired.
     string internal constant EXPIRED_MARKET = "market expired";
 

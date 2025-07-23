@@ -101,8 +101,10 @@ contract Morpho is IMorphoStaticTyping {
         _;
     }
 
-    modifier onlyValidated(MarketParams memory marketParams) {
+    modifier onlyValidMarket(MarketParams memory marketParams) {
         Id id = marketParams.id();
+        require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
+        require(marketParams.expiryDate > block.timestamp, ErrorsLib.EXPIRED_MARKET);
         require(
             (isMarketValidated[marketParams.lender][id] && isMarketValidated[marketParams.borrower][id])
                 || (marketParams.lender == address(0) && marketParams.borrower == address(0)),
@@ -198,6 +200,8 @@ contract Morpho is IMorphoStaticTyping {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(msg.sender == marketParams.lender || msg.sender == marketParams.borrower, ErrorsLib.NOT_AUTHORIZED);
+        require(!isMarketValidated[msg.sender][id], ErrorsLib.MARKET_ALREADY_VALIDATED);
+        require(marketParams.expiryDate > block.timestamp, ErrorsLib.EXPIRED_MARKET);
 
         isMarketValidated[msg.sender][id] = true;
 
@@ -213,7 +217,7 @@ contract Morpho is IMorphoStaticTyping {
         uint256 shares,
         address onBehalf,
         bytes calldata data
-    ) external onlyLender(marketParams) onlyValidated(marketParams) returns (uint256, uint256) {
+    ) external onlyLender(marketParams) onlyValidMarket(marketParams) returns (uint256, uint256) {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(UtilsLib.exactlyOneZero(assets, shares), ErrorsLib.INCONSISTENT_INPUT);
@@ -244,7 +248,7 @@ contract Morpho is IMorphoStaticTyping {
         uint256 shares,
         address onBehalf,
         address receiver
-    ) external onlyLender(marketParams) onlyValidated(marketParams) returns (uint256, uint256) {
+    ) external onlyLender(marketParams) returns (uint256, uint256) {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(UtilsLib.exactlyOneZero(assets, shares), ErrorsLib.INCONSISTENT_INPUT);
@@ -279,7 +283,7 @@ contract Morpho is IMorphoStaticTyping {
         uint256 shares,
         address onBehalf,
         address receiver
-    ) external onlyBorrower(marketParams) onlyValidated(marketParams) returns (uint256, uint256) {
+    ) external onlyBorrower(marketParams) onlyValidMarket(marketParams) returns (uint256, uint256) {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(UtilsLib.exactlyOneZero(assets, shares), ErrorsLib.INCONSISTENT_INPUT);
@@ -313,7 +317,7 @@ contract Morpho is IMorphoStaticTyping {
         uint256 shares,
         address onBehalf,
         bytes calldata data
-    ) external onlyBorrower(marketParams) onlyValidated(marketParams) returns (uint256, uint256) {
+    ) external onlyBorrower(marketParams) returns (uint256, uint256) {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(UtilsLib.exactlyOneZero(assets, shares), ErrorsLib.INCONSISTENT_INPUT);
@@ -344,7 +348,7 @@ contract Morpho is IMorphoStaticTyping {
     function supplyCollateral(MarketParams memory marketParams, uint256 assets, address onBehalf, bytes calldata data)
         external
         onlyBorrower(marketParams)
-        onlyValidated(marketParams)
+        onlyValidMarket(marketParams)
     {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
@@ -366,7 +370,6 @@ contract Morpho is IMorphoStaticTyping {
     function withdrawCollateral(MarketParams memory marketParams, uint256 assets, address onBehalf, address receiver)
         external
         onlyBorrower(marketParams)
-        onlyValidated(marketParams)
     {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
@@ -395,7 +398,7 @@ contract Morpho is IMorphoStaticTyping {
         uint256 seizedAssets,
         uint256 repaidShares,
         bytes calldata data
-    ) external onlyValidated(marketParams) returns (uint256, uint256) {
+    ) external returns (uint256, uint256) {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(UtilsLib.exactlyOneZero(seizedAssets, repaidShares), ErrorsLib.INCONSISTENT_INPUT);
