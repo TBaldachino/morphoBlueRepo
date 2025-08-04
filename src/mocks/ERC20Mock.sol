@@ -4,10 +4,20 @@ pragma solidity ^0.8.0;
 import {IERC20} from "./interfaces/IERC20.sol";
 
 contract ERC20Mock is IERC20 {
+    string public name;
+    string public symbol;
+    uint8 public decimals;
+
     uint256 public totalSupply;
 
     mapping(address account => uint256) public balanceOf;
     mapping(address account => mapping(address spender => uint256)) public allowance;
+
+    constructor(string memory _name, string memory _symbol, uint8 _decimals) {
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
+    }
 
     function setBalance(address account, uint256 amount) public virtual {
         if (amount > balanceOf[account]) totalSupply += amount - balanceOf[account];

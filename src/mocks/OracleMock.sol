@@ -17,7 +17,7 @@ contract OracleMock is IOracle {
     constructor(uint256 initialPrice, uint8 _loanTokenDecimals, uint8 _collateralTokenDecimals) {
         loanTokenDecimals = _loanTokenDecimals;
         collateralTokenDecimals = _collateralTokenDecimals;
-        _setScaledPrice(initialPrice);
+        _price = initialPrice * 10 ** (loanTokenDecimals - collateralTokenDecimals);
     }
 
     /// @inheritdoc IOracle
@@ -28,13 +28,6 @@ contract OracleMock is IOracle {
     /// @notice Updates the price manually for demo purposes
     /// @param newPrice The new raw price of 1 collateral token quoted in 1 loan token (non-scaled)
     function setPrice(uint256 newPrice) external {
-        _setScaledPrice(newPrice);
-    }
-
-    /// @dev Internal helper to scale the price according to Morpho’s rules
-    function _setScaledPrice(uint256 rawPrice) internal {
-        // Scale to 1e36 + loanDecimals - collateralDecimals
-        uint256 scaleFactor = 36 + loanTokenDecimals - collateralTokenDecimals;
-        _price = rawPrice * 10 ** scaleFactor;
+        _price = newPrice * 10 ** (loanTokenDecimals - collateralTokenDecimals);
     }
 }

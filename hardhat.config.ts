@@ -24,6 +24,13 @@ const config: HardhatUserConfig = {
         count: 202, // must be even
       },
     },
+    sepoliaScroll: {
+      url: "https://sepolia-rpc.scroll.io",
+      chainId: 534351,
+      gasPrice: 0,
+      gas: "auto",
+      allowBlocksWithSameTimestamp: true,
+    },
   },
   solidity: {
     compilers: [

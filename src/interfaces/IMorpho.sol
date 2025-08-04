@@ -134,6 +134,8 @@ interface IMorphoBase {
     /// the point where `totalBorrowShares` is very large and borrowing overflows.
     function createMarket(MarketParams memory marketParams) external;
 
+    function validateMarket(MarketParams memory marketParams) external;
+
     /// @notice Supplies `assets` or `shares` on behalf of `onBehalf`, optionally calling back the caller's
     /// `onMorphoSupply` function with the given `data`.
     /// @dev Either `assets` or `shares` should be zero. Most use cases should rely on `assets` as an input so the
