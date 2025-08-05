@@ -619,7 +619,7 @@ contract Morpho is IMorphoStaticTyping {
         uint256 maxBorrow = uint256(position[id][borrower].collateral).mulDivDown(collateralPrice, ORACLE_PRICE_SCALE)
             .wMulDown(marketParams.lltv);
 
-        return (maxBorrow >= borrowed) && (block.timestamp < (uint256(marketParams.expiryDate) + 1 days));
+        return (maxBorrow >= borrowed) || (block.timestamp < (uint256(marketParams.expiryDate) + 1 days));
     }
 
     /* STORAGE VIEW */

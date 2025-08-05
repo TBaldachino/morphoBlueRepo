@@ -14,9 +14,10 @@ async function main() {
         const Oracle = await ethers.getContractFactory("OracleMock", owner);
         const LoanToken = await ethers.getContractFactory("ERC20Mock", owner);
         const CollateralToken = await ethers.getContractFactory("ERC20Mock", owner);
+        const oraclePrice = ethers.parseUnits("100", 36);
 
         contract = await Morpho.deploy(owner.address);
-        oracle = await Oracle.deploy(100, 18, 18);
+        oracle = await Oracle.deploy(oraclePrice, 18, 18);
         loanToken = await LoanToken.deploy("LoanToken", "EURCV", 18);
         collateralToken = await CollateralToken.deploy("CollateralToken", "DNCB", 18);
 
@@ -37,8 +38,9 @@ async function main() {
         const LoanToken = await ethers.getContractFactory("ERC20Mock", owner);
         const CollateralToken = await ethers.getContractFactory("ERC20Mock", owner);
 
+        const oraclePrice = ethers.parseUnits("100", 36);
         contract = await Morpho.deploy(owner.address);
-        oracle = await Oracle.deploy(100, 18, 18);
+        oracle = await Oracle.deploy(oraclePrice, 18, 18);
         loanToken = await LoanToken.deploy("LoanToken", "EURCV", 18);
         collateralToken = await CollateralToken.deploy("CollateralToken", "DNCB", 18);
 
