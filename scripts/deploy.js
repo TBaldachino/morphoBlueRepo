@@ -28,8 +28,7 @@ async function main() {
         await collateralToken.waitForDeployment();
 
     } else if (hre.network.name === "sepoliaScroll") {
-        const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_SCROLL_URL);
-        owner = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY, provider);
+        [owner] = await ethers.getSigners();
 
         console.log("Deploying to sepoliaScroll with owner:", owner.address);
         console.log("\n\n");

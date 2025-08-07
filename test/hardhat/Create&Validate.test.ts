@@ -66,12 +66,13 @@ describe("Morpho", () => {
 
     const ERC20MockFactory = await hre.ethers.getContractFactory("ERC20Mock", admin);
 
-    loanToken = await ERC20MockFactory.deploy();
-    collateralToken = await ERC20MockFactory.deploy();
+    loanToken = await ERC20MockFactory.deploy("loanToken", "EURCV", 18);
+    collateralToken = await ERC20MockFactory.deploy("collateralToke,", "DNCB", 18);
 
     const OracleMockFactory = await hre.ethers.getContractFactory("OracleMock", admin);
+    const oraclePrice = ethers.parseUnits("1", 36)
 
-    oracle = await OracleMockFactory.deploy(1n, 0, 0);
+    oracle = await OracleMockFactory.deploy(oraclePrice, 18, 18);
 
     const MorphoFactory = await hre.ethers.getContractFactory("Morpho", admin);
 

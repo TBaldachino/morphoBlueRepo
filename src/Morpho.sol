@@ -408,7 +408,11 @@ contract Morpho is IMorphoStaticTyping {
         {
             uint256 collateralPrice = IOracle(marketParams.oracle).price();
 
-            require(!_isHealthy(marketParams, id, borrower, collateralPrice), ErrorsLib.HEALTHY_POSITION);
+            require(
+                !_isHealthy(marketParams, id, borrower, collateralPrice) ||
+                block.timestamp > uint256(marketParams.expiryDate)
+                , ErrorsLib.HEALTHY_POSITION
+            );
 
             // The liquidation incentive factor is min(maxLiquidationIncentiveFactor, 1/(1 - cursor*(1 - lltv))).
             uint256 liquidationIncentiveFactor = UtilsLib.min(
@@ -619,7 +623,7 @@ contract Morpho is IMorphoStaticTyping {
         uint256 maxBorrow = uint256(position[id][borrower].collateral).mulDivDown(collateralPrice, ORACLE_PRICE_SCALE)
             .wMulDown(marketParams.lltv);
 
-        return (maxBorrow >= borrowed) || (block.timestamp < (uint256(marketParams.expiryDate) + 1 days));
+        return maxBorrow >= borrowed;
     }
 
     /* STORAGE VIEW */

@@ -66,12 +66,13 @@ describe("Morpho", () => {
 
     const ERC20MockFactory = await hre.ethers.getContractFactory("ERC20Mock", admin);
 
-    loanToken = await ERC20MockFactory.deploy();
-    collateralToken = await ERC20MockFactory.deploy();
+    loanToken = await ERC20MockFactory.deploy("loanToken", "EURCV", 18);
+    collateralToken = await ERC20MockFactory.deploy("collateralToke,", "DNCB", 18);
 
     const OracleMockFactory = await hre.ethers.getContractFactory("OracleMock", admin);
+    const oraclePrice = ethers.parseUnits("1", 36)
 
-    oracle = await OracleMockFactory.deploy(1n, 0, 0);
+    oracle = await OracleMockFactory.deploy(oraclePrice, 18, 18);
 
     const MorphoFactory = await hre.ethers.getContractFactory("Morpho", admin);
 
@@ -115,15 +116,15 @@ describe("Morpho", () => {
     describe("Supply of assets", () => {
         it("should supply assets", async () => {
             await morpho.connect(borrowers[0]).validateMarket(marketParams);
-            await morpho.connect(suppliers[0]).supply(marketParams, 10, 0, suppliers[0].address, "0x");
+            await morpho.connect(suppliers[0]).supply(marketParams, ethers.parseUnits("10", 18), 0, suppliers[0].address, "0x");
             let pos = await morpho.connect(suppliers[0]).position(id as BytesLike, suppliers[0].address)
-            expect(pos.supplyShares).to.equal(10e6);
+            expect(pos.supplyShares).to.equal(ethers.parseUnits("10", 24));
         });
 
         it("should not supply assets if the market is not validated", async () => {
 
             await expect(
-                morpho.connect(suppliers[0]).supply(marketParams, 10, 0, suppliers[0].address, "0x")
+                morpho.connect(suppliers[0]).supply(marketParams, ethers.parseUnits("10", 18), 0, suppliers[0].address, "0x")
             ).to.be.revertedWith("market not validated");
         });
 
@@ -137,7 +138,7 @@ describe("Morpho", () => {
             await setNextBlockTimestamp(block!.timestamp + elapsed);
 
             await expect(
-                morpho.connect(suppliers[0]).supply(marketParams, 10, 0, suppliers[0].address, "0x")
+                morpho.connect(suppliers[0]).supply(marketParams, ethers.parseUnits("10", 18), 0, suppliers[0].address, "0x")
             ).to.be.revertedWith("market expired");
         });
 
@@ -145,7 +146,7 @@ describe("Morpho", () => {
 
             await morpho.connect(borrowers[0]).validateMarket(marketParams);
             await expect(
-                morpho.connect(suppliers[1]).supply(marketParams, 10, 0, suppliers[0].address, "0x")
+                morpho.connect(suppliers[1]).supply(marketParams, ethers.parseUnits("10", 18), 0, suppliers[0].address, "0x")
             ).to.be.revertedWith("not authorized");
         });
     });
@@ -153,15 +154,15 @@ describe("Morpho", () => {
     describe("Supply of collateral", () => {
         it("should supply collateral", async () => {
             await morpho.connect(borrowers[0]).validateMarket(marketParams);
-            await morpho.connect(borrowers[0]).supplyCollateral(marketParams, 10, borrowers[0].address, "0x");
+            await morpho.connect(borrowers[0]).supplyCollateral(marketParams, ethers.parseUnits("10", 18), borrowers[0].address, "0x");
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
-            expect(pos.collateral).to.equal(10);
+            expect(pos.collateral).to.equal(ethers.parseUnits("10", 18));
         });
 
         it("should not supply collateral if the market is not validated", async () => {
 
             await expect(
-                morpho.connect(borrowers[0]).supplyCollateral(marketParams, 10, borrowers[0].address, "0x")
+                morpho.connect(borrowers[0]).supplyCollateral(marketParams, ethers.parseUnits("10", 18), borrowers[0].address, "0x")
             ).to.be.revertedWith("market not validated");
         });
 
@@ -175,7 +176,7 @@ describe("Morpho", () => {
             await setNextBlockTimestamp(block!.timestamp + elapsed);
 
             await expect(
-                morpho.connect(borrowers[0]).supplyCollateral(marketParams, 10, borrowers[0].address, "0x")
+                morpho.connect(borrowers[0]).supplyCollateral(marketParams, ethers.parseUnits("10", 18), borrowers[0].address, "0x")
             ).to.be.revertedWith("market expired");
         });
 
@@ -183,7 +184,7 @@ describe("Morpho", () => {
 
             await morpho.connect(borrowers[0]).validateMarket(marketParams);
             await expect(
-                morpho.connect(borrowers[1]).supplyCollateral(marketParams, 10, borrowers[1].address, "0x")
+                morpho.connect(borrowers[1]).supplyCollateral(marketParams, ethers.parseUnits("10", 18), borrowers[1].address, "0x")
             ).to.be.revertedWith("not authorized");
         });
     });

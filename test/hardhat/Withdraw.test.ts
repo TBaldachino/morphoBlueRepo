@@ -66,12 +66,14 @@ describe("Morpho", () => {
 
     const ERC20MockFactory = await hre.ethers.getContractFactory("ERC20Mock", admin);
 
-    loanToken = await ERC20MockFactory.deploy();
-    collateralToken = await ERC20MockFactory.deploy();
+    loanToken = await ERC20MockFactory.deploy("loanToken", "EURCV", 18);
+    collateralToken = await ERC20MockFactory.deploy("collateralToke,", "DNCB", 18);
 
     const OracleMockFactory = await hre.ethers.getContractFactory("OracleMock", admin);
+    const oraclePrice = ethers.parseUnits("1", 36)
 
-    oracle = await OracleMockFactory.deploy(1n, 0, 0);
+    oracle = await OracleMockFactory.deploy(oraclePrice, 18, 18);
+
 
     const MorphoFactory = await hre.ethers.getContractFactory("Morpho", admin);
 
@@ -112,19 +114,19 @@ describe("Morpho", () => {
     await loanToken.setBalance(liquidator.address, initBalance);
     await loanToken.connect(liquidator).approve(morphoAddress, MaxUint256);
 
-    await morpho.connect(suppliers[0]).supply(marketParams, 1000, 0, suppliers[0].address, "0x");
-    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, 1000, borrowers[0].address, "0x");
+    await morpho.connect(suppliers[0]).supply(marketParams, ethers.parseUnits("1000", 18), 0, suppliers[0].address, "0x");
+    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[0].address, "0x");
     });
 
     describe("Withdraw of assets", () => {
         it("should withdraw partial assets", async () => {
-            await morpho.connect(suppliers[0]).withdraw(marketParams, 100, 0, suppliers[0].address, suppliers[0].address);
+            await morpho.connect(suppliers[0]).withdraw(marketParams, ethers.parseUnits("100", 18), 0, suppliers[0].address, suppliers[0].address);
             let pos = await morpho.connect(suppliers[0]).position(id as BytesLike, suppliers[0].address)
-            expect(pos.supplyShares).to.equal(900e6);
+            expect(pos.supplyShares).to.equal(ethers.parseUnits("900", 24));
         });
 
         it("should withdraw all assets", async () => {
-            await morpho.connect(suppliers[0]).withdraw(marketParams, 1000, 0, suppliers[0].address, suppliers[0].address);
+            await morpho.connect(suppliers[0]).withdraw(marketParams, ethers.parseUnits("1000", 18), 0, suppliers[0].address, suppliers[0].address);
             let pos = await morpho.connect(suppliers[0]).position(id as BytesLike, suppliers[0].address)
             expect(pos.supplyShares).to.equal(0);
         });
@@ -135,7 +137,7 @@ describe("Morpho", () => {
 
             await setNextBlockTimestamp(block!.timestamp + elapsed);
             
-            await morpho.connect(suppliers[0]).withdraw(marketParams, 1000, 0, suppliers[0].address, suppliers[0].address);
+            await morpho.connect(suppliers[0]).withdraw(marketParams, ethers.parseUnits("1000", 18), 0, suppliers[0].address, suppliers[0].address);
             let pos = await morpho.connect(suppliers[0]).position(id as BytesLike, suppliers[0].address)
             expect(block!.timestamp + elapsed).to.be.greaterThan(marketParams.expiryDate);
             expect(pos.supplyShares).to.equal(0);
@@ -143,27 +145,27 @@ describe("Morpho", () => {
 
         it("should not withdraw assets if not authorized", async () => {
             await expect(
-                morpho.connect(suppliers[1]).withdraw(marketParams, 100, 0, suppliers[1].address, suppliers[1].address)
+                morpho.connect(suppliers[1]).withdraw(marketParams, ethers.parseUnits("100", 18), 0, suppliers[1].address, suppliers[1].address)
             ).to.be.revertedWith("not authorized");
         });
 
         it("should not withdraw assets if not enough liquidity", async () => {
-            await morpho.connect(borrowers[0]).borrow(marketParams, 860, 0, borrowers[0].address, borrowers[0].address);
+            await morpho.connect(borrowers[0]).borrow(marketParams, ethers.parseUnits("860", 18), 0, borrowers[0].address, borrowers[0].address);
             await expect(
-                morpho.connect(suppliers[0]).withdraw(marketParams, 1000, 0, suppliers[0].address, suppliers[0].address)
+                morpho.connect(suppliers[0]).withdraw(marketParams, ethers.parseUnits("1000", 18), 0, suppliers[0].address, suppliers[0].address)
             ).to.be.revertedWith("insufficient liquidity");
         });
     });
 
     describe("Withdraw of collateral", () => {
         it("should withdraw partial collateral", async () => {
-            await morpho.connect(borrowers[0]).withdrawCollateral(marketParams, 100, borrowers[0].address, borrowers[0].address);
+            await morpho.connect(borrowers[0]).withdrawCollateral(marketParams, ethers.parseUnits("100", 18), borrowers[0].address, borrowers[0].address);
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
-            expect(pos.collateral).to.equal(900);
+            expect(pos.collateral).to.equal(ethers.parseUnits("900", 18));
         });
 
         it("should withdraw all collateral", async () => {
-            await morpho.connect(borrowers[0]).withdrawCollateral(marketParams, 1000, borrowers[0].address, borrowers[0].address);
+            await morpho.connect(borrowers[0]).withdrawCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[0].address, borrowers[0].address);
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
             expect(pos.collateral).to.equal(0);
         });
@@ -173,7 +175,7 @@ describe("Morpho", () => {
             const elapsed = 1000 * 86400;
 
             await setNextBlockTimestamp(block!.timestamp + elapsed);
-            await morpho.connect(borrowers[0]).withdrawCollateral(marketParams, 1000, borrowers[0].address, borrowers[0].address);
+            await morpho.connect(borrowers[0]).withdrawCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[0].address, borrowers[0].address);
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
             expect(block!.timestamp + elapsed).to.be.greaterThan(marketParams.expiryDate);
             expect(pos.collateral).to.equal(0);
@@ -181,14 +183,14 @@ describe("Morpho", () => {
 
         it("should not withdraw collateral if not authorized", async () => {
             await expect(
-                morpho.connect(borrowers[1]).withdrawCollateral(marketParams, 100, borrowers[1].address, borrowers[1].address)
+                morpho.connect(borrowers[1]).withdrawCollateral(marketParams, ethers.parseUnits("100", 18), borrowers[1].address, borrowers[1].address)
             ).to.be.revertedWith("not authorized");
         });
 
         it("should not withdraw collateral if unhealhy position", async () => {
-            await morpho.connect(borrowers[0]).borrow(marketParams, 860, 0, borrowers[0].address, borrowers[0].address);
+            await morpho.connect(borrowers[0]).borrow(marketParams, ethers.parseUnits("860", 18), 0, borrowers[0].address, borrowers[0].address);
             await expect(
-                morpho.connect(borrowers[0]).withdrawCollateral(marketParams, 1000, borrowers[0].address, borrowers[0].address)
+                morpho.connect(borrowers[0]).withdrawCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[0].address, borrowers[0].address)
             ).to.be.revertedWith("insufficient collateral");
         });
     

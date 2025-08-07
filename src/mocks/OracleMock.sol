@@ -17,7 +17,7 @@ contract OracleMock is IOracle {
     constructor(uint256 initialPrice, uint8 _loanTokenDecimals, uint8 _collateralTokenDecimals) {
         loanTokenDecimals = _loanTokenDecimals;
         collateralTokenDecimals = _collateralTokenDecimals;
-        _price = initialPrice * 10 ** loanTokenDecimals / 10 ** collateralTokenDecimal;
+        _price = initialPrice * 10 ** loanTokenDecimals / 10 ** collateralTokenDecimals;
     }
 
     /// @inheritdoc IOracle

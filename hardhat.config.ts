@@ -25,11 +25,9 @@ const config: HardhatUserConfig = {
       },
     },
     sepoliaScroll: {
-      url: "https://sepolia-rpc.scroll.io",
+      url: process.env.SEPOLIA_SCROLL_URL,
       chainId: 534351,
-      gasPrice: 0,
-      gas: "auto",
-      allowBlocksWithSameTimestamp: true,
+      accounts: [process.env.OWNER_PRIVATE_KEY || ""],
     },
   },
   solidity: {

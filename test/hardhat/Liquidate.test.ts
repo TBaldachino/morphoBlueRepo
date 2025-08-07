@@ -66,12 +66,13 @@ describe("Morpho", () => {
 
     const ERC20MockFactory = await hre.ethers.getContractFactory("ERC20Mock", admin);
 
-    loanToken = await ERC20MockFactory.deploy();
-    collateralToken = await ERC20MockFactory.deploy();
+    loanToken = await ERC20MockFactory.deploy("loanToken", "EURCV", 18);
+    collateralToken = await ERC20MockFactory.deploy("collateralToke,", "DNCB", 18);
 
     const OracleMockFactory = await hre.ethers.getContractFactory("OracleMock", admin);
+    const oraclePrice = ethers.parseUnits("100", 36)
 
-    oracle = await OracleMockFactory.deploy(100n, 0, 0);
+    oracle = await OracleMockFactory.deploy(oraclePrice, 18, 18);
 
     const MorphoFactory = await hre.ethers.getContractFactory("Morpho", admin);
 
@@ -112,9 +113,9 @@ describe("Morpho", () => {
     await loanToken.setBalance(liquidator.address, initBalance);
     await loanToken.connect(liquidator).approve(morphoAddress, MaxUint256);
 
-    await morpho.connect(suppliers[0]).supply(marketParams, 100000, 0, suppliers[0].address, "0x");
-    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, 2000, borrowers[0].address, "0x");
-    await morpho.connect(borrowers[0]).borrow(marketParams, 100000, 0, borrowers[0].address, borrowers[0].address);
+    await morpho.connect(suppliers[0]).supply(marketParams, ethers.parseUnits("100000", 18), 0, suppliers[0].address, "0x");
+    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, ethers.parseUnits("2000", 18), borrowers[0].address, "0x");
+    await morpho.connect(borrowers[0]).borrow(marketParams, ethers.parseUnits("100000", 18), 0, borrowers[0].address, borrowers[0].address);
     });
 
     describe("Liquidate", () => {
@@ -126,20 +127,20 @@ describe("Morpho", () => {
 
             expect(block!.timestamp + elapsed).to.be.greaterThan(marketParams.expiryDate);
 
-            await morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, 100000e6, "0x");
+            await morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("100000", 24), "0x");
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
         });
 
         it("should liquidate if the position is unhealthy", async () => {
-            await oracle.setPrice(55n);
-            await morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, 100000e6, "0x");
+            await oracle.setPrice(ethers.parseUnits("55", 36));
+            await morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("100000", 24), "0x");
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
             expect(pos.borrowShares).to.equal(0);
         });
 
         it("should not liquidate if the market is not expired and the position is healthy", async () => {
             await expect(
-                morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, 100000e6, "0x")
+                morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("100000", 24), "0x")
             ).to.be.revertedWith("position is healthy");
         });
     });
