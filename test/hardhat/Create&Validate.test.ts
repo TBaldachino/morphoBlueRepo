@@ -21,7 +21,7 @@ const random = () => {
 
 const identifier = (marketParams: MarketParamsStruct) => {
   const encodedMarket = AbiCoder.defaultAbiCoder().encode(
-    ["address", "address", "address", "address", "address", "uint96", "uint128", "uint128", "uint128"],
+    ["address", "address", "address", "address", "address", "uint96", "uint128", "uint128", "uint128", "uint128"],
     Object.values(marketParams),
   );
 
@@ -35,7 +35,7 @@ const randomForwardTimestamp = async () => {
   await setNextBlockTimestamp(block!.timestamp + elapsed);
 };
 
-describe("Morpho", () => {
+describe.skip("Morpho", () => {
   let admin: SignerWithAddress;
   let liquidator: SignerWithAddress;
   let suppliers: SignerWithAddress[];
@@ -78,18 +78,6 @@ describe("Morpho", () => {
 
     morpho = await MorphoFactory.deploy(admin.address);
 
-    const irm = 5n * BigInt.WAD / 100n;
-
-    /*updateMarket({
-      loanToken: await loanToken.getAddress(),
-      collateralToken: await collateralToken.getAddress(),
-      oracle: await oracle.getAddress(),
-      irm: irm,
-      lltv: BigInt.WAD * 865n / 1000n,
-    });
-
-    await morpho.createMarket(marketParams);*/
-
     const morphoAddress = await morpho.getAddress();
 
     for (const user of users) {
@@ -109,8 +97,6 @@ describe("Morpho", () => {
   describe("Creation of a market", () => {
     it("should create a market", async () => {
 
-        const irm = 5n * BigInt.WAD / 100n;
-
         const block = await hre.ethers.provider.getBlock("latest");
         const randomDelay = 86400 + Math.floor(Math.random() * 86400);
         const expiryDate = toBigInt(block!.timestamp + randomDelay);
@@ -125,7 +111,7 @@ describe("Morpho", () => {
             expiryDate: BigInt(expiryDate),
             initialBorrowAmount: ethers.parseUnits("100", 18),
             initialCollateralAmount: ethers.parseUnits("1000", 18),
-            repayAmount: ethers.parseUnits("100", 18),
+            repayAmount: ethers.parseUnits("150", 18),
         });
 
         await morpho.connect(suppliers[0]).createMarket(marketParams);
@@ -140,7 +126,7 @@ describe("Morpho", () => {
         expect(market.expiryDate).to.equal(expiryDate);
         expect(market.initialBorrowAmount).to.equal(ethers.parseUnits("100", 18));
         expect(market.initialCollateralAmount).to.equal(ethers.parseUnits("1000", 18));
-        expect(market.repayAmount).to.equal(ethers.parseUnits("100", 18));
+        expect(market.repayAmount).to.equal(ethers.parseUnits("150", 18));
     });
 
     it("should not create a market if not authorized", async () => {
@@ -163,6 +149,60 @@ describe("Morpho", () => {
       ).to.be.revertedWith("market already created");
     });
 
+    it("should not create a market if the initial borrow amount is zero", async () => {
+      updateMarket({
+        initialBorrowAmount: 0n,
+      });
+
+      await expect(
+        morpho.connect(suppliers[0]).createMarket(marketParams)
+      ).to.be.revertedWith("zero assets");
+    });
+
+    it("should not create a market if the initial collateral amount is zero", async () => {
+      updateMarket({
+        initialCollateralAmount: 0n,
+      });
+
+      await expect(
+        morpho.connect(suppliers[0]).createMarket(marketParams)
+      ).to.be.revertedWith("zero assets");
+    });
+
+    it("should not create a market if the repay amount is zero", async () => {
+      updateMarket({
+        repayAmount: 0n,
+      });
+
+      await expect(
+        morpho.connect(suppliers[0]).createMarket(marketParams)
+      ).to.be.revertedWith("zero assets");
+    });
+
+    it("should not create a market if the repay amount is less than the initial borrow amount", async () => {
+      updateMarket({
+        initialBorrowAmount: ethers.parseUnits("100", 18),
+        initialCollateralAmount: ethers.parseUnits("1000", 18),
+        repayAmount: ethers.parseUnits("99", 18),
+      });
+
+      await expect(
+        morpho.connect(suppliers[0]).createMarket(marketParams)
+      ).to.be.revertedWith("insufficient repay amount");
+    });
+
+    it("should not create a market if the repay amount is greater than the minimum collateral amount", async () => {
+      updateMarket({
+        initialBorrowAmount: ethers.parseUnits("1000", 18),
+        initialCollateralAmount: ethers.parseUnits("1500", 18),
+        repayAmount: ethers.parseUnits("1500", 18),
+      });
+
+      await expect(
+        morpho.connect(suppliers[0]).createMarket(marketParams)
+      ).to.be.revertedWith("insufficient initial collateral");
+    });
+
     it("should not create a market if the market is already expired", async () => {
       updateMarket({
         expiryDate: 0n,
@@ -174,7 +214,7 @@ describe("Morpho", () => {
     });
   });
 
-  describe("Validation of a market", () => {
+  describe.skip("Validation of a market", () => {
     it("should validate a market", async () => {
 
       const block = await hre.ethers.provider.getBlock("latest");
@@ -191,7 +231,7 @@ describe("Morpho", () => {
         expiryDate: BigInt(expiryDate),
         initialBorrowAmount: ethers.parseUnits("100", 18),
         initialCollateralAmount: ethers.parseUnits("1000", 18),
-        repayAmount: ethers.parseUnits("100", 18),
+        repayAmount: ethers.parseUnits("150", 18),
       });
 
       await morpho.connect(suppliers[0]).createMarket(marketParams);

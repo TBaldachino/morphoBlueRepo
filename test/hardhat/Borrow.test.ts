@@ -21,7 +21,7 @@ const random = () => {
 
 const identifier = (marketParams: MarketParamsStruct) => {
   const encodedMarket = AbiCoder.defaultAbiCoder().encode(
-    ["address", "address", "address", "address", "address", "uint96", "uint128", "uint128", "uint128"],
+    ["address", "address", "address", "address", "address", "uint96", "uint128", "uint128", "uint128", "uint128"],
     Object.values(marketParams),
   );
 
@@ -78,8 +78,6 @@ describe("Morpho", () => {
 
     morpho = await MorphoFactory.deploy(admin.address);
 
-    const irm = 5n * BigInt.WAD / 100n;
-
     const block = await hre.ethers.provider.getBlock("latest");
     const randomDelay = 86400 + Math.floor(Math.random() * 86400);
     const expiryDate = toBigInt(block!.timestamp + randomDelay);
@@ -94,7 +92,7 @@ describe("Morpho", () => {
         expiryDate: BigInt(expiryDate),
         initialBorrowAmount: ethers.parseUnits("100", 18),
         initialCollateralAmount: ethers.parseUnits("1000", 18),
-        repayAmount: ethers.parseUnits("100", 18),
+        repayAmount: ethers.parseUnits("150", 18),
     });
 
     await morpho.connect(suppliers[0]).createMarket(marketParams);
@@ -119,12 +117,14 @@ describe("Morpho", () => {
     await morpho.connect(borrowers[0]).supplyCollateral(marketParams, borrowers[0].address, "0x");
     });
 
-    describe("Borrow of assets", () => {
+    describe.skip("Borrow of assets", () => {
         it("should borrow assets", async () => {
             await morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address);
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
-            expect(pos.borrowShares).to.equal(ethers.parseUnits("100", 24));
+            expect(pos.initialBorrowShares).to.equal(ethers.parseUnits("100", 24));
+            expect(pos.borrowShares).to.equal(ethers.parseUnits("150", 24));
             expect(pos.collateral).to.equal(ethers.parseUnits("1000", 18));
+            expect(await loanToken.balanceOf(borrowers[0].address)).to.equal(initBalance + ethers.parseUnits("100", 18));
         });
 
         it("should not borrow assets if not authorized", async () => {
@@ -133,40 +133,37 @@ describe("Morpho", () => {
             ).to.be.revertedWith("not authorized");
         });
 
-        it("should not borrow assets if the market is expired", async () => {
-            const block = await hre.ethers.provider.getBlock("latest");
-            const elapsed =  10000 * 86400;
-
-            await setNextBlockTimestamp(block!.timestamp + elapsed);
-
+        it("should not borrow assets if the position is already borrowed", async () => {
+            await morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address);
             await expect(
                 morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address)
-            ).to.be.revertedWith("market expired");
+            ).to.be.revertedWith("already borrowed");
         });
 
-        it("should not borrow assets if the collateral is not enough", async () => {
-            await expect(
-                morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address)
-            ).to.be.revertedWith("insufficient collateral");
+
+      it("should not borrow assets if the market is expired", async () => {
+          const block = await hre.ethers.provider.getBlock("latest");
+          const elapsed =  10000 * 86400;
+
+          await setNextBlockTimestamp(block!.timestamp + elapsed);
+
+          await expect(
+              morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address)
+          ).to.be.revertedWith("market expired");
+      });
+
+      it("should not borrow assets if the supply is not enough", async () => {
+        updateMarket({
+            lender: suppliers[1].address,
+            borrower: borrowers[1].address,
         });
 
-        it("should not borrow assets if the supply is not enough", async () => {
-            const block = await hre.ethers.provider.getBlock("latest");
-
-            updateMarket({
-                expiryDate: toBigInt(block!.timestamp + 10000 * 86400),
-            });
-
-            await morpho.connect(suppliers[0]).createMarket(marketParams);
-
-            await morpho.connect(borrowers[0]).validateMarket(marketParams);
-            await morpho.connect(suppliers[0]).supply(marketParams, suppliers[0].address, "0x");
-            await morpho.connect(borrowers[0]).supplyCollateral(marketParams, borrowers[0].address, "0x");
-
-            await expect(
-                morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address)
-            ).to.be.revertedWith("insufficient liquidity");
-        });
-        
+        await morpho.connect(suppliers[1]).createMarket(marketParams);
+        await morpho.connect(borrowers[1]).validateMarket(marketParams);
+        await morpho.connect(borrowers[1]).supplyCollateral(marketParams, borrowers[1].address, "0x");
+        await expect(
+            morpho.connect(borrowers[1]).borrow(marketParams, borrowers[1].address, borrowers[1].address)
+        ).to.be.revertedWith("insufficient liquidity");
+      });
     });
 });

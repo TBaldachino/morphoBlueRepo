@@ -21,7 +21,7 @@ const random = () => {
 
 const identifier = (marketParams: MarketParamsStruct) => {
   const encodedMarket = AbiCoder.defaultAbiCoder().encode(
-    ["address", "address", "address", "address", "address", "uint96", "uint128", "uint128", "uint128"],
+    ["address", "address", "address", "address", "address", "uint96", "uint128", "uint128", "uint128", "uint128"],
     Object.values(marketParams),
   );
 
@@ -93,8 +93,8 @@ describe("Morpho", () => {
         lltv: BigInt(BigInt.WAD * 865n / 1000n),
         expiryDate: BigInt(expiryDate),
         initialBorrowAmount: ethers.parseUnits("100", 18),
-        initialCollateralAmount: ethers.parseUnits("1000", 18),
-        repayAmount: ethers.parseUnits("100", 18),
+        initialCollateralAmount: ethers.parseUnits("2", 18),
+        repayAmount: ethers.parseUnits("150", 18),
     });
 
     await morpho.connect(suppliers[0]).createMarket(marketParams);
@@ -129,20 +129,26 @@ describe("Morpho", () => {
 
             expect(block!.timestamp + elapsed).to.be.greaterThan(marketParams.expiryDate);
 
-            await morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("100000", 24), "0x");
+            await morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("150", 24), "0x");
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
+            expect(pos.borrowShares).to.equal(0);
+            let market = await morpho.market(id as BytesLike);
+            expect(market.totalBorrowAssets).to.equal(ethers.parseUnits("0", 18));
+            expect(market.totalBorrowShares).to.equal(0);
+            expect(await loanToken.balanceOf(liquidator.address)).to.be.lessThan(initBalance);
+            expect(await collateralToken.balanceOf(liquidator.address)).to.be.greaterThan(0);
         });
 
         it("should liquidate if the position is unhealthy", async () => {
-            await oracle.setPrice(ethers.parseUnits("55", 36));
-            await morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("100000", 24), "0x");
+            await oracle.setPrice(ethers.parseUnits("80", 36));
+            await morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("150", 24), "0x");
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
             expect(pos.borrowShares).to.equal(0);
         });
 
         it("should not liquidate if the market is not expired and the position is healthy", async () => {
             await expect(
-                morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("100000", 24), "0x")
+                morpho.connect(liquidator).liquidate(marketParams, borrowers[0].address, 0, ethers.parseUnits("150", 24), "0x")
             ).to.be.revertedWith("position is healthy");
         });
     });

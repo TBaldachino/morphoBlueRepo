@@ -180,12 +180,12 @@ contract Morpho is IMorphoStaticTyping {
         require(marketParams.initialBorrowAmount > 0, ErrorsLib.ZERO_ASSETS);
         require(marketParams.initialCollateralAmount > 0, ErrorsLib.ZERO_ASSETS);
         require(marketParams.repayAmount > 0, ErrorsLib.ZERO_ASSETS);
-        require(marketParams.initialBorrowAmount > marketParams.repayAmount, ErrorsLib.INSUFFICIENT_INITIAL_BORROW);
-        require(marketParams.lltv < WAD, ErrorsLib.MAX_LLTV_EXCEEDED);
+        require(marketParams.initialBorrowAmount <= marketParams.repayAmount, ErrorsLib.INSUFFICIENT_REPAY_AMOUNT);
+        require(marketParams.lltv <= WAD, ErrorsLib.MAX_LLTV_EXCEEDED);
 
 
         uint256 collateralPrice = IOracle(marketParams.oracle).price();
-        uint256 minCollateralAmount = marketParams.initialBorrowAmount.mulDivUp(ORACLE_PRICE_SCALE, collateralPrice).wDivUp(marketParams.lltv);
+        uint256 minCollateralAmount = marketParams.repayAmount.mulDivUp(ORACLE_PRICE_SCALE, collateralPrice).wDivUp(marketParams.lltv);
         require(marketParams.initialCollateralAmount >= minCollateralAmount, ErrorsLib.INSUFFICIENT_INITIAL_COLLATERAL);
 
         // require(isIrmEnabled[marketParams.irm], ErrorsLib.IRM_NOT_ENABLED);
@@ -227,6 +227,7 @@ contract Morpho is IMorphoStaticTyping {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(onBehalf != address(0), ErrorsLib.ZERO_ADDRESS);
+        require(position[id][onBehalf].supplyShares == 0, ErrorsLib.ALREADY_SUPPLIED);
 
         uint256 assets = marketParams.initialBorrowAmount;
         uint256 shares = assets.toSharesDown(market[id].totalSupplyAssets, market[id].totalSupplyShares);
@@ -288,6 +289,8 @@ contract Morpho is IMorphoStaticTyping {
         require(receiver != address(0), ErrorsLib.ZERO_ADDRESS);
         // No need to verify that onBehalf != address(0) thanks to the following authorization check.
         require(_isSenderAuthorized(onBehalf), ErrorsLib.UNAUTHORIZED);
+        require(position[id][onBehalf].initialBorrowShares == 0, ErrorsLib.ALREADY_BORROWED);
+        require(marketParams.initialBorrowAmount <= market[id].totalSupplyAssets, ErrorsLib.INSUFFICIENT_LIQUIDITY);
 
         uint256 initialBorrowAmount = marketParams.initialBorrowAmount;
         uint256 initialBorrowShares = initialBorrowAmount.toSharesUp(market[id].totalBorrowAssets, market[id].totalBorrowShares);
@@ -301,12 +304,15 @@ contract Morpho is IMorphoStaticTyping {
         market[id].totalBorrowShares += shares.toUint128();
         market[id].totalBorrowAssets += assets.toUint128();
 
+        // On ajoute les intérêts lorsque l'on emprunte.
+        market[id].totalSupplyAssets += UtilsLib.zeroFloorSub(assets, market[id].totalSupplyAssets).toUint128();
+
         require(_isHealthy(marketParams, id, onBehalf), ErrorsLib.INSUFFICIENT_COLLATERAL);
-        require(market[id].totalBorrowAssets <= market[id].totalSupplyAssets, ErrorsLib.INSUFFICIENT_LIQUIDITY);
+        //require(market[id].totalBorrowAssets <= market[id].totalSupplyAssets, ErrorsLib.INSUFFICIENT_LIQUIDITY);
 
-        emit EventsLib.Borrow(id, msg.sender, onBehalf, receiver, assets, shares);
+        emit EventsLib.Borrow(id, msg.sender, onBehalf, receiver, initialBorrowAmount, initialBorrowShares);
 
-        IERC20(marketParams.loanToken).safeTransfer(receiver, assets);
+        IERC20(marketParams.loanToken).safeTransfer(receiver, initialBorrowAmount);
 
         return (assets, shares);
     }

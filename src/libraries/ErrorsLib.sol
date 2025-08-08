@@ -97,5 +97,11 @@ library ErrorsLib {
     string internal constant INSUFFICIENT_INITIAL_BORROW = "insufficient initial borrow";
 
     /// @notice Thrown when the repay amount is insufficient.
-    string internal constant INSUFFICIENT_REPAY = "insufficient repay";
+    string internal constant INSUFFICIENT_REPAY_AMOUNT = "insufficient repay amount";
+
+    /// @notice Thrown when the position is already supplied.
+    string internal constant ALREADY_SUPPLIED = "already supplied";
+
+    /// @notice Thrown when the position is already borrowed.
+    string internal constant ALREADY_BORROWED = "already borrowed";
 }
