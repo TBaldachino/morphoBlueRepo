@@ -151,7 +151,7 @@ contract Morpho is IMorphoStaticTyping {
         require(newFee <= MAX_FEE, ErrorsLib.MAX_FEE_EXCEEDED);
 
         // Accrue interest using the previous fee set before changing it.
-        _accrueInterest(marketParams, id);
+        //_accrueInterest(marketParams, id);
 
         // Safe "unchecked" cast.
         market[id].fee = uint128(newFee);
@@ -175,10 +175,18 @@ contract Morpho is IMorphoStaticTyping {
         Id id = marketParams.id();
 
         require(msg.sender == marketParams.lender || msg.sender == marketParams.borrower, ErrorsLib.NOT_AUTHORIZED);
-
         require((marketParams.lender == address(0)) == (marketParams.borrower == address(0)), ErrorsLib.ZERO_ADDRESS);
-
         require(marketParams.expiryDate > block.timestamp, ErrorsLib.EXPIRED_MARKET);
+        require(marketParams.initialBorrowAmount > 0, ErrorsLib.ZERO_ASSETS);
+        require(marketParams.initialCollateralAmount > 0, ErrorsLib.ZERO_ASSETS);
+        require(marketParams.repayAmount > 0, ErrorsLib.ZERO_ASSETS);
+        require(marketParams.initialBorrowAmount > marketParams.repayAmount, ErrorsLib.INSUFFICIENT_INITIAL_BORROW);
+        require(marketParams.lltv < WAD, ErrorsLib.MAX_LLTV_EXCEEDED);
+
+
+        uint256 collateralPrice = IOracle(marketParams.oracle).price();
+        uint256 minCollateralAmount = marketParams.initialBorrowAmount.mulDivUp(ORACLE_PRICE_SCALE, collateralPrice).wDivUp(marketParams.lltv);
+        require(marketParams.initialCollateralAmount >= minCollateralAmount, ErrorsLib.INSUFFICIENT_INITIAL_COLLATERAL);
 
         // require(isIrmEnabled[marketParams.irm], ErrorsLib.IRM_NOT_ENABLED);
         //require(isLltvEnabled[marketParams.lltv], ErrorsLib.LLTV_NOT_ENABLED);
@@ -213,22 +221,17 @@ contract Morpho is IMorphoStaticTyping {
     /// @inheritdoc IMorphoBase
     function supply(
         MarketParams memory marketParams,
-        uint256 assets,
-        uint256 shares,
         address onBehalf,
         bytes calldata data
     ) external onlyLender(marketParams) onlyValidMarket(marketParams) returns (uint256, uint256) {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
-        require(UtilsLib.exactlyOneZero(assets, shares), ErrorsLib.INCONSISTENT_INPUT);
         require(onBehalf != address(0), ErrorsLib.ZERO_ADDRESS);
 
-        _accrueInterest(marketParams, id);
+        uint256 assets = marketParams.initialBorrowAmount;
+        uint256 shares = assets.toSharesDown(market[id].totalSupplyAssets, market[id].totalSupplyShares);
 
-        if (assets > 0) shares = assets.toSharesDown(market[id].totalSupplyAssets, market[id].totalSupplyShares);
-        else assets = shares.toAssetsUp(market[id].totalSupplyAssets, market[id].totalSupplyShares);
-
-        position[id][onBehalf].supplyShares += shares;
+        position[id][onBehalf].supplyShares += shares.toUint128();
         market[id].totalSupplyShares += shares.toUint128();
         market[id].totalSupplyAssets += assets.toUint128();
 
@@ -256,12 +259,10 @@ contract Morpho is IMorphoStaticTyping {
         // No need to verify that onBehalf != address(0) thanks to the following authorization check.
         require(_isSenderAuthorized(onBehalf), ErrorsLib.UNAUTHORIZED);
 
-        _accrueInterest(marketParams, id);
-
         if (assets > 0) shares = assets.toSharesUp(market[id].totalSupplyAssets, market[id].totalSupplyShares);
         else assets = shares.toAssetsDown(market[id].totalSupplyAssets, market[id].totalSupplyShares);
 
-        position[id][onBehalf].supplyShares -= shares;
+        position[id][onBehalf].supplyShares -= shares.toUint128();
         market[id].totalSupplyShares -= shares.toUint128();
         market[id].totalSupplyAssets -= assets.toUint128();
 
@@ -279,23 +280,23 @@ contract Morpho is IMorphoStaticTyping {
     /// @inheritdoc IMorphoBase
     function borrow(
         MarketParams memory marketParams,
-        uint256 assets,
-        uint256 shares,
         address onBehalf,
         address receiver
     ) external onlyBorrower(marketParams) onlyValidMarket(marketParams) returns (uint256, uint256) {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
-        require(UtilsLib.exactlyOneZero(assets, shares), ErrorsLib.INCONSISTENT_INPUT);
         require(receiver != address(0), ErrorsLib.ZERO_ADDRESS);
         // No need to verify that onBehalf != address(0) thanks to the following authorization check.
         require(_isSenderAuthorized(onBehalf), ErrorsLib.UNAUTHORIZED);
 
-        _accrueInterest(marketParams, id);
+        uint256 initialBorrowAmount = marketParams.initialBorrowAmount;
+        uint256 initialBorrowShares = initialBorrowAmount.toSharesUp(market[id].totalBorrowAssets, market[id].totalBorrowShares);
 
-        if (assets > 0) shares = assets.toSharesUp(market[id].totalBorrowAssets, market[id].totalBorrowShares);
-        else assets = shares.toAssetsDown(market[id].totalBorrowAssets, market[id].totalBorrowShares);
+        uint256 assets = marketParams.repayAmount;
+        uint256 shares = assets.toSharesUp(market[id].totalBorrowAssets, market[id].totalBorrowShares);
 
+
+        position[id][onBehalf].initialBorrowShares = initialBorrowShares.toUint128();
         position[id][onBehalf].borrowShares += shares.toUint128();
         market[id].totalBorrowShares += shares.toUint128();
         market[id].totalBorrowAssets += assets.toUint128();
@@ -323,8 +324,6 @@ contract Morpho is IMorphoStaticTyping {
         require(UtilsLib.exactlyOneZero(assets, shares), ErrorsLib.INCONSISTENT_INPUT);
         require(onBehalf != address(0), ErrorsLib.ZERO_ADDRESS);
 
-        _accrueInterest(marketParams, id);
-
         if (assets > 0) shares = assets.toSharesDown(market[id].totalBorrowAssets, market[id].totalBorrowShares);
         else assets = shares.toAssetsUp(market[id].totalBorrowAssets, market[id].totalBorrowShares);
 
@@ -345,17 +344,18 @@ contract Morpho is IMorphoStaticTyping {
     /* COLLATERAL MANAGEMENT */
 
     /// @inheritdoc IMorphoBase
-    function supplyCollateral(MarketParams memory marketParams, uint256 assets, address onBehalf, bytes calldata data)
+    function supplyCollateral(MarketParams memory marketParams, address onBehalf, bytes calldata data)
         external
         onlyBorrower(marketParams)
         onlyValidMarket(marketParams)
     {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
-        require(assets != 0, ErrorsLib.ZERO_ASSETS);
         require(onBehalf != address(0), ErrorsLib.ZERO_ADDRESS);
 
         // Don't accrue interest because it's not required and it saves gas.
+
+        uint256 assets = marketParams.initialCollateralAmount;
 
         position[id][onBehalf].collateral += assets.toUint128();
 
@@ -377,8 +377,6 @@ contract Morpho is IMorphoStaticTyping {
         require(receiver != address(0), ErrorsLib.ZERO_ADDRESS);
         // No need to verify that onBehalf != address(0) thanks to the following authorization check.
         require(_isSenderAuthorized(onBehalf), ErrorsLib.UNAUTHORIZED);
-
-        _accrueInterest(marketParams, id);
 
         position[id][onBehalf].collateral -= assets.toUint128();
 
@@ -402,8 +400,6 @@ contract Morpho is IMorphoStaticTyping {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
         require(UtilsLib.exactlyOneZero(seizedAssets, repaidShares), ErrorsLib.INCONSISTENT_INPUT);
-
-        _accrueInterest(marketParams, id);
 
         {
             uint256 collateralPrice = IOracle(marketParams.oracle).price();
@@ -523,16 +519,16 @@ contract Morpho is IMorphoStaticTyping {
     /* INTEREST MANAGEMENT */
 
     /// @inheritdoc IMorphoBase
-    function accrueInterest(MarketParams memory marketParams) external {
+    /*function accrueInterest(MarketParams memory marketParams) external {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
 
         _accrueInterest(marketParams, id);
-    }
+    }*/
 
     /// @dev Accrues interest for the given market `marketParams`.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
-    function _accrueInterest(MarketParams memory marketParams, Id id) internal {
+    /*function _accrueInterest(MarketParams memory marketParams, Id id) internal {
         uint256 elapsed = block.timestamp - market[id].lastUpdate;
         if (elapsed == 0) return;
 
@@ -553,7 +549,7 @@ contract Morpho is IMorphoStaticTyping {
                 market[id].totalSupplyShares += feeShares.toUint128();
             }*/
 
-        if (marketParams.irm != 0) {
+        /*if (marketParams.irm != 0) {
             uint256 borrowRate = marketParams.irm;
 
             /// On prend un taux d'intérêt simple annuel plutôt que composé car c'est la norme pour les ope de repo
@@ -576,7 +572,7 @@ contract Morpho is IMorphoStaticTyping {
 
         // Safe "unchecked" cast.
         market[id].lastUpdate = uint128(block.timestamp);
-    }
+    }*/
 
     /* HEALTH CHECK */
 

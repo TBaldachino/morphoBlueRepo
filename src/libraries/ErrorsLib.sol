@@ -89,4 +89,13 @@ library ErrorsLib {
 
     /// @notice Thrown when the maximum uint128 is exceeded.
     string internal constant MAX_UINT128_EXCEEDED = "max uint128 exceeded";
+
+    /// @notice Thrown when the initial collateral amount is insufficient.
+    string internal constant INSUFFICIENT_INITIAL_COLLATERAL = "insufficient initial collateral";
+
+    /// @notice Thrown when the initial borrow amount is insufficient.
+    string internal constant INSUFFICIENT_INITIAL_BORROW = "insufficient initial borrow";
+
+    /// @notice Thrown when the repay amount is insufficient.
+    string internal constant INSUFFICIENT_REPAY = "insufficient repay";
 }

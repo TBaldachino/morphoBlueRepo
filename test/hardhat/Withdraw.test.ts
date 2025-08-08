@@ -92,8 +92,10 @@ describe("Morpho", () => {
         lender: suppliers[0].address,
         borrower: borrowers[0].address,
         lltv: BigInt(BigInt.WAD * 865n / 1000n),
-        irm: BigInt(irm),
         expiryDate: BigInt(expiryDate),
+        initialBorrowAmount: ethers.parseUnits("100", 18),
+        initialCollateralAmount: ethers.parseUnits("1000", 18),
+        repayAmount: ethers.parseUnits("100", 18),
     });
 
     await morpho.connect(suppliers[0]).createMarket(marketParams);
@@ -114,8 +116,8 @@ describe("Morpho", () => {
     await loanToken.setBalance(liquidator.address, initBalance);
     await loanToken.connect(liquidator).approve(morphoAddress, MaxUint256);
 
-    await morpho.connect(suppliers[0]).supply(marketParams, ethers.parseUnits("1000", 18), 0, suppliers[0].address, "0x");
-    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[0].address, "0x");
+    await morpho.connect(suppliers[0]).supply(marketParams, suppliers[0].address, "0x");
+    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, borrowers[0].address, "0x");
     });
 
     describe("Withdraw of assets", () => {
@@ -150,7 +152,7 @@ describe("Morpho", () => {
         });
 
         it("should not withdraw assets if not enough liquidity", async () => {
-            await morpho.connect(borrowers[0]).borrow(marketParams, ethers.parseUnits("860", 18), 0, borrowers[0].address, borrowers[0].address);
+            await morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address);
             await expect(
                 morpho.connect(suppliers[0]).withdraw(marketParams, ethers.parseUnits("1000", 18), 0, suppliers[0].address, suppliers[0].address)
             ).to.be.revertedWith("insufficient liquidity");
@@ -188,7 +190,7 @@ describe("Morpho", () => {
         });
 
         it("should not withdraw collateral if unhealhy position", async () => {
-            await morpho.connect(borrowers[0]).borrow(marketParams, ethers.parseUnits("860", 18), 0, borrowers[0].address, borrowers[0].address);
+            await morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address);
             await expect(
                 morpho.connect(borrowers[0]).withdrawCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[0].address, borrowers[0].address)
             ).to.be.revertedWith("insufficient collateral");

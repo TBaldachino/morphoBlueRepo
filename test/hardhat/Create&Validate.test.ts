@@ -21,7 +21,7 @@ const random = () => {
 
 const identifier = (marketParams: MarketParamsStruct) => {
   const encodedMarket = AbiCoder.defaultAbiCoder().encode(
-    ["address", "address", "address", "address", "address", "uint64", "uint64", "uint128"],
+    ["address", "address", "address", "address", "address", "uint96", "uint128", "uint128", "uint128"],
     Object.values(marketParams),
   );
 
@@ -122,8 +122,10 @@ describe("Morpho", () => {
             lender: suppliers[0].address,
             borrower: borrowers[0].address,
             lltv: BigInt(BigInt.WAD * 865n / 1000n),
-            irm: BigInt(irm),
             expiryDate: BigInt(expiryDate),
+            initialBorrowAmount: ethers.parseUnits("100", 18),
+            initialCollateralAmount: ethers.parseUnits("1000", 18),
+            repayAmount: ethers.parseUnits("100", 18),
         });
 
         await morpho.connect(suppliers[0]).createMarket(marketParams);
@@ -134,9 +136,11 @@ describe("Morpho", () => {
         expect(market.borrower).to.equal(borrowers[0].address);
         expect(market.loanToken).to.equal(await loanToken.getAddress());
         expect(market.collateralToken).to.equal(await collateralToken.getAddress());
-        expect(market.irm).to.equal(irm);
         expect(market.lltv).to.equal(BigInt.WAD * 865n / 1000n);
         expect(market.expiryDate).to.equal(expiryDate);
+        expect(market.initialBorrowAmount).to.equal(ethers.parseUnits("100", 18));
+        expect(market.initialCollateralAmount).to.equal(ethers.parseUnits("1000", 18));
+        expect(market.repayAmount).to.equal(ethers.parseUnits("100", 18));
     });
 
     it("should not create a market if not authorized", async () => {
@@ -184,8 +188,10 @@ describe("Morpho", () => {
         lender: suppliers[0].address,
         borrower: borrowers[0].address,
         lltv: BigInt(BigInt.WAD * 865n / 1000n),
-        irm: BigInt(5n * BigInt.WAD / 100n),
         expiryDate: BigInt(expiryDate),
+        initialBorrowAmount: ethers.parseUnits("100", 18),
+        initialCollateralAmount: ethers.parseUnits("1000", 18),
+        repayAmount: ethers.parseUnits("100", 18),
       });
 
       await morpho.connect(suppliers[0]).createMarket(marketParams);
@@ -235,8 +241,10 @@ describe("Morpho", () => {
         lender: suppliers[0].address,
         borrower: borrowers[0].address,
         lltv: BigInt(BigInt.WAD * 865n / 1000n),
-        irm: BigInt(5n * BigInt.WAD / 100n),
         expiryDate: BigInt(expiryDate),
+        initialBorrowAmount: ethers.parseUnits("100", 18),
+        initialCollateralAmount: ethers.parseUnits("1000", 18),
+        repayAmount: ethers.parseUnits("100", 18),
       });
 
       await morpho.connect(suppliers[0]).createMarket(marketParams);

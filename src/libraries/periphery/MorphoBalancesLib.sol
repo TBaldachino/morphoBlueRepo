@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.0;
+/*pragma solidity ^0.8.0;
 
 import {Id, MarketParams, Market, IMorpho} from "../../interfaces/IMorpho.sol";
 import {IIrm} from "../../interfaces/IIrm.sol";
@@ -118,3 +118,4 @@ library MorphoBalancesLib {
         return borrowShares.toAssetsUp(totalBorrowAssets, totalBorrowShares);
     }
 }
+*/

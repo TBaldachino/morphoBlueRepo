@@ -7,18 +7,20 @@ struct MarketParams {
     address loanToken;
     address collateralToken;
     address oracle;
-    // address irm;
     address lender;
     address borrower;
-    uint64 lltv;
-    uint64 irm;
+    uint96 lltv;
     uint128 expiryDate;
+    uint128 initialBorrowAmount;
+    uint128 initialCollateralAmount;
+    uint128 repayAmount;
 }
 
 /// @dev Warning: For `feeRecipient`, `supplyShares` does not contain the accrued shares since the last interest
 /// accrual.
 struct Position {
-    uint256 supplyShares;
+    uint128 supplyShares;
+    uint128 initialBorrowShares;
     uint128 borrowShares;
     uint128 collateral;
 }
@@ -145,16 +147,12 @@ interface IMorphoBase {
     /// @dev Supplying an amount of shares may lead to supply more or fewer assets than expected due to slippage.
     /// Consider using the `assets` parameter to avoid this.
     /// @param marketParams The market to supply assets to.
-    /// @param assets The amount of assets to supply.
-    /// @param shares The amount of shares to mint.
     /// @param onBehalf The address that will own the increased supply position.
     /// @param data Arbitrary data to pass to the `onMorphoSupply` callback. Pass empty data if not needed.
     /// @return assetsSupplied The amount of assets supplied.
     /// @return sharesSupplied The amount of shares minted.
     function supply(
         MarketParams memory marketParams,
-        uint256 assets,
-        uint256 shares,
         address onBehalf,
         bytes memory data
     ) external returns (uint256 assetsSupplied, uint256 sharesSupplied);
@@ -189,16 +187,12 @@ interface IMorphoBase {
     /// @dev Borrowing an amount of shares may lead to borrow fewer assets than expected due to slippage.
     /// Consider using the `assets` parameter to avoid this.
     /// @param marketParams The market to borrow assets from.
-    /// @param assets The amount of assets to borrow.
-    /// @param shares The amount of shares to mint.
     /// @param onBehalf The address that will own the increased borrow position.
     /// @param receiver The address that will receive the borrowed assets.
     /// @return assetsBorrowed The amount of assets borrowed.
     /// @return sharesBorrowed The amount of shares minted.
     function borrow(
         MarketParams memory marketParams,
-        uint256 assets,
-        uint256 shares,
         address onBehalf,
         address receiver
     ) external returns (uint256 assetsBorrowed, uint256 sharesBorrowed);
@@ -230,10 +224,9 @@ interface IMorphoBase {
     /// @dev Interest are not accrued since it's not required and it saves gas.
     /// @dev Supplying a large amount can revert for overflow.
     /// @param marketParams The market to supply collateral to.
-    /// @param assets The amount of collateral to supply.
     /// @param onBehalf The address that will own the increased collateral position.
     /// @param data Arbitrary data to pass to the `onMorphoSupplyCollateral` callback. Pass empty data if not needed.
-    function supplyCollateral(MarketParams memory marketParams, uint256 assets, address onBehalf, bytes memory data)
+    function supplyCollateral(MarketParams memory marketParams, address onBehalf, bytes memory data)
         external;
 
     /// @notice Withdraws `assets` of collateral on behalf of `onBehalf` and sends the assets to `receiver`.
@@ -294,7 +287,7 @@ interface IMorphoBase {
     function setAuthorizationWithSig(Authorization calldata authorization, Signature calldata signature) external;
 
     /// @notice Accrues interest for the given market `marketParams`.
-    function accrueInterest(MarketParams memory marketParams) external;
+    //function accrueInterest(MarketParams memory marketParams) external;
 
     /// @notice Returns the data stored on the different `slots`.
     function extSloads(bytes32[] memory slots) external view returns (bytes32[] memory);
@@ -309,7 +302,12 @@ interface IMorphoStaticTyping is IMorphoBase {
     function position(Id id, address user)
         external
         view
-        returns (uint256 supplyShares, uint128 borrowShares, uint128 collateral);
+        returns (
+            uint128 supplyShares,
+            uint128 initialBorrowShares,
+            uint128 borrowShares,
+            uint128 collateral
+        );
 
     /// @notice The state of the market corresponding to `id`.
     /// @dev Warning: `totalSupplyAssets` does not contain the accrued interest since the last interest accrual.
@@ -340,9 +338,11 @@ interface IMorphoStaticTyping is IMorphoBase {
             address oracle,
             address lender,
             address borrower,
-            uint64 lltv,
-            uint64 irm, /*address irm*/
-            uint128 expiryDate
+            uint96 lltv,
+            uint128 expiryDate,
+            uint128 initialBorrowAmount,
+            uint128 initialCollateralAmount,
+            uint128 repayAmount
         );
 }
 
