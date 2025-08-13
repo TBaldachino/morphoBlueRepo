@@ -18,17 +18,23 @@ library ErrorsLib {
     /// @notice Thrown when the LLTV to enable exceeds the maximum LLTV.
     string internal constant MAX_LLTV_EXCEEDED = "max LLTV exceeded";
 
+    /// @notice Thrown when the LLTV to enable is less than the minimum LLTV.
+    string internal constant MIN_LLTV_EXCEEDED = "min LLTV exceeded";
+
     /// @notice Thrown when the fee to set exceeds the maximum fee.
     string internal constant MAX_FEE_EXCEEDED = "max fee exceeded";
 
     /// @notice Thrown when the value is already set.
     string internal constant ALREADY_SET = "already set";
 
+    /// @notice Thrown when the IRM to enable is less than the minimum IRM.
+    string internal constant MIN_IRM_EXCEEDED = "min IRM exceeded";
+
     /// @notice Thrown when the IRM is not enabled at market creation.
-    string internal constant IRM_NOT_ENABLED = "IRM not enabled";
+    //string internal constant IRM_NOT_ENABLED = "IRM not enabled";
 
     /// @notice Thrown when the LLTV is not enabled at market creation.
-    string internal constant LLTV_NOT_ENABLED = "LLTV not enabled";
+    //string internal constant LLTV_NOT_ENABLED = "LLTV not enabled";
 
     /// @notice Thrown when the market is already created.
     string internal constant MARKET_ALREADY_CREATED = "market already created";
