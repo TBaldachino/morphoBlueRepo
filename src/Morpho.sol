@@ -177,11 +177,14 @@ contract Morpho is IMorphoStaticTyping {
         require(msg.sender == marketParams.lender || msg.sender == marketParams.borrower, ErrorsLib.NOT_AUTHORIZED);
         require((marketParams.lender == address(0)) == (marketParams.borrower == address(0)), ErrorsLib.ZERO_ADDRESS);
         require(marketParams.expiryDate > block.timestamp, ErrorsLib.EXPIRED_MARKET);
+
         require(marketParams.initialBorrowAmount > 0, ErrorsLib.ZERO_ASSETS);
         require(marketParams.initialCollateralAmount > 0, ErrorsLib.ZERO_ASSETS);
         require(marketParams.repayAmount > 0, ErrorsLib.ZERO_ASSETS);
         require(marketParams.initialBorrowAmount <= marketParams.repayAmount, ErrorsLib.INSUFFICIENT_REPAY_AMOUNT);
+
         require(marketParams.lltv <= WAD, ErrorsLib.MAX_LLTV_EXCEEDED);
+        require(marketParams.lltv >= 0, ErrorsLib.MIN_LLTV_EXCEEDED);
 
 
         uint256 collateralPrice = IOracle(marketParams.oracle).price();

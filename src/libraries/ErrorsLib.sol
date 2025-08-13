@@ -18,6 +18,9 @@ library ErrorsLib {
     /// @notice Thrown when the LLTV to enable exceeds the maximum LLTV.
     string internal constant MAX_LLTV_EXCEEDED = "max LLTV exceeded";
 
+    /// @notice Thrown when the LLTV to enable is less than the minimum LLTV.
+    string internal constant MIN_LLTV_EXCEEDED = "min LLTV exceeded";
+
     /// @notice Thrown when the fee to set exceeds the maximum fee.
     string internal constant MAX_FEE_EXCEEDED = "max fee exceeded";
 
