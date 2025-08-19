@@ -353,18 +353,17 @@ contract Morpho is IMorphoStaticTyping {
     /* COLLATERAL MANAGEMENT */
 
     /// @inheritdoc IMorphoBase
-    function supplyCollateral(MarketParams memory marketParams, address onBehalf, bytes calldata data)
+    function supplyCollateral(MarketParams memory marketParams, uint256 assets, address onBehalf, bytes calldata data)
         external
         onlyBorrower(marketParams)
         onlyValidMarket(marketParams)
     {
         Id id = marketParams.id();
         require(market[id].lastUpdate != 0, ErrorsLib.MARKET_NOT_CREATED);
+        require(assets != 0, ErrorsLib.ZERO_ASSETS);
         require(onBehalf != address(0), ErrorsLib.ZERO_ADDRESS);
 
         // Don't accrue interest because it's not required and it saves gas.
-
-        uint256 assets = marketParams.initialCollateralAmount;
 
         position[id][onBehalf].collateral += assets.toUint128();
 

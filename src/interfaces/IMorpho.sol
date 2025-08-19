@@ -224,9 +224,10 @@ interface IMorphoBase {
     /// @dev Interest are not accrued since it's not required and it saves gas.
     /// @dev Supplying a large amount can revert for overflow.
     /// @param marketParams The market to supply collateral to.
+    /// @param assets The amount of collateral to supply.
     /// @param onBehalf The address that will own the increased collateral position.
     /// @param data Arbitrary data to pass to the `onMorphoSupplyCollateral` callback. Pass empty data if not needed.
-    function supplyCollateral(MarketParams memory marketParams, address onBehalf, bytes memory data)
+    function supplyCollateral(MarketParams memory marketParams, uint256 assets, address onBehalf, bytes memory data)
         external;
 
     /// @notice Withdraws `assets` of collateral on behalf of `onBehalf` and sends the assets to `receiver`.

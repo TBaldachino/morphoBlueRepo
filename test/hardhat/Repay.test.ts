@@ -35,7 +35,7 @@ const randomForwardTimestamp = async () => {
   await setNextBlockTimestamp(block!.timestamp + elapsed);
 };
 
-describe.skip("Morpho", () => {
+describe("Morpho", () => {
   let admin: SignerWithAddress;
   let liquidator: SignerWithAddress;
   let suppliers: SignerWithAddress[];
@@ -114,7 +114,7 @@ describe.skip("Morpho", () => {
     await loanToken.connect(liquidator).approve(morphoAddress, MaxUint256);
 
     await morpho.connect(suppliers[0]).supply(marketParams, suppliers[0].address, "0x");
-    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, borrowers[0].address, "0x");
+    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[0].address, "0x");
     await morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address);
     });
 

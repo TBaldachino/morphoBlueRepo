@@ -35,7 +35,7 @@ const randomForwardTimestamp = async () => {
   await setNextBlockTimestamp(block!.timestamp + elapsed);
 };
 
-describe.skip("Morpho", () => {
+describe("Morpho", () => {
   let admin: SignerWithAddress;
   let liquidator: SignerWithAddress;
   let suppliers: SignerWithAddress[];
@@ -214,7 +214,7 @@ describe.skip("Morpho", () => {
     });
   });
 
-  describe.skip("Validation of a market", () => {
+  describe("Validation of a market", () => {
     it("should validate a market", async () => {
 
       const block = await hre.ethers.provider.getBlock("latest");

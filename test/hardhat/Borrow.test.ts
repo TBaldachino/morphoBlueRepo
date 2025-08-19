@@ -114,10 +114,10 @@ describe("Morpho", () => {
     await loanToken.connect(liquidator).approve(morphoAddress, MaxUint256);
 
     await morpho.connect(suppliers[0]).supply(marketParams, suppliers[0].address, "0x");
-    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, borrowers[0].address, "0x");
+    await morpho.connect(borrowers[0]).supplyCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[0].address, "0x");
     });
 
-    describe.skip("Borrow of assets", () => {
+    describe("Borrow of assets", () => {
         it("should borrow assets", async () => {
             await morpho.connect(borrowers[0]).borrow(marketParams, borrowers[0].address, borrowers[0].address);
             let pos = await morpho.connect(borrowers[0]).position(id as BytesLike, borrowers[0].address)
@@ -160,7 +160,7 @@ describe("Morpho", () => {
 
         await morpho.connect(suppliers[1]).createMarket(marketParams);
         await morpho.connect(borrowers[1]).validateMarket(marketParams);
-        await morpho.connect(borrowers[1]).supplyCollateral(marketParams, borrowers[1].address, "0x");
+        await morpho.connect(borrowers[1]).supplyCollateral(marketParams, ethers.parseUnits("1000", 18), borrowers[1].address, "0x");
         await expect(
             morpho.connect(borrowers[1]).borrow(marketParams, borrowers[1].address, borrowers[1].address)
         ).to.be.revertedWith("insufficient liquidity");
