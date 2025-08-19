@@ -367,6 +367,8 @@ contract Morpho is IMorphoStaticTyping {
 
         position[id][onBehalf].collateral += assets.toUint128();
 
+        require(position[id][onBehalf].collateral >= marketParams.initialCollateralAmount, ErrorsLib.INSUFFICIENT_COLLATERAL);
+
         emit EventsLib.SupplyCollateral(id, msg.sender, onBehalf, assets);
 
         if (data.length > 0) IMorphoSupplyCollateralCallback(msg.sender).onMorphoSupplyCollateral(assets, data);
