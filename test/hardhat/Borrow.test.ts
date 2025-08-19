@@ -35,7 +35,7 @@ const randomForwardTimestamp = async () => {
   await setNextBlockTimestamp(block!.timestamp + elapsed);
 };
 
-describe.skip("Morpho", () => {
+describe("Morpho", () => {
   let admin: SignerWithAddress;
   let liquidator: SignerWithAddress;
   let suppliers: SignerWithAddress[];
