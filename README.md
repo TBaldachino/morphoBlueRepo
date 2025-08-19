@@ -6,7 +6,8 @@ The goal is to closely replicate the mechanics of traditional repo markets using
 
 ## Key Modifications
 
-- **Bilateral Markets**: Markets are no longer fully permissionless — each market is now defined by a specific `lender` and `borrower`, making interactions exclusive between two parties.
+- **Predetermined Amounts**: Unlike the main branch, this fork fixes in advance both the deposit and repayment amounts for each repo transaction, making the mechanism even closer to the functioning of traditional repo agreements. 
+- **Bilateral Markets**: Markets are no longer fully permissionless: each market is now defined by a specific `lender` and `borrower`, making interactions exclusive between two parties.
 - **Maturity Date**: A `maturityDate` field was added to each market to support time-bound repo agreements.
 - **Market Validation Flow**: A validation mechanism was implemented to allow the counterparty to explicitly accept the proposed market terms before the market becomes active.
 - **Access Control**:
@@ -17,6 +18,14 @@ The goal is to closely replicate the mechanics of traditional repo markets using
   - The current block timestamp has passed the market's maturity date.
 
 These additions make the protocol more suitable for institutional and testnet experiments where on-chain repo scenarios must mimic off-chain bilateral operations.
+
+## Deployment
+
+To deploy the contracts, run:
+
+```bash
+npx hardhat run scripts/deploy.js --network <network>
+```
 
 # Morpho Blue
 
